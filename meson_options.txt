@@ -534,7 +534,7 @@ option(
   description : 'Build gallium VMware/svga driver with mksGuestStats instrumentation.'
 )
 option(
-  'amber',
+  'copal',
   type : 'boolean',
   value : false,
   description : 'Configure build for legacy devices (coexist with Mesa >= 22.0)'

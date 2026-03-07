@@ -39,9 +39,9 @@ if get_option('layout') != 'mirror'
   error('`mirror` is the only build directory layout supported')
 endif
 
-amber = get_option('amber')
-if amber
-  package_version_suffix=' Amber'
+copal = get_option('copal')
+if copal
+  package_version_suffix=' Copal'
 else
   package_version_suffix=''
 endif
@@ -61,8 +61,8 @@ cpp_args = []
 
 with_moltenvk_dir = get_option('moltenvk-dir')
 
-if amber
-  pre_args += '-DAMBER'
+if copal
+  pre_args += '-DCOPAL'
 endif
 
 with_vulkan_icd_dir = get_option('vulkan-icd-dir')
@@ -211,7 +211,7 @@ with_dri = dri_drivers.length() != 0
 
 gallium_drivers = get_option('gallium-drivers')
 if gallium_drivers.contains('auto')
-  if amber
+  if copal
     gallium_drivers = []
     if with_dri_i915
       warning('End user should use i915g. i915 should only be used for regression testing.')
@@ -282,7 +282,7 @@ endif
 _vulkan_drivers = get_option('vulkan-drivers')
 if _vulkan_drivers.contains('auto')
   if system_has_kms_drm
-    if amber
+    if copal
       _vulkan_drivers = []
     elif host_machine.cpu_family().startswith('x86')
       _vulkan_drivers = ['amd', 'intel', 'swrast']
@@ -319,9 +319,7 @@ with_any_intel = with_dri_i965 or with_intel_vk or with_gallium_iris or with_gal
 if with_swrast_vk and not with_gallium_softpipe
   error('swrast vulkan requires gallium swrast')
 endif
-if with_dri_i915 and with_gallium_i915
-  error('Only one i915 provider can be built')
-endif
+# Copal classic i915 only installs i830_dri.so, so it can coexist with Gallium i915g
 if with_gallium_tegra and not with_gallium_nouveau
   error('tegra driver requires nouveau driver')
 endif
@@ -554,7 +552,7 @@ if with_glx != 'disabled'
 endif
 
 _glvnd = get_option('glvnd')
-if _glvnd == 'true' or _glvnd == 'enabled' or (amber and _glvnd == 'auto')
+if _glvnd == 'true' or _glvnd == 'enabled' or (copal and _glvnd == 'auto')
   with_glvnd = true
 else
   with_glvnd = false
@@ -562,8 +560,8 @@ endif
 
 glvnd_vendor_name = get_option('glvnd-vendor-name')
 if glvnd_vendor_name == 'auto'
-  if amber
-    glvnd_vendor_name = 'amber'
+  if copal
+    glvnd_vendor_name = 'copal'
   else
     glvnd_vendor_name = 'mesa'
   endif

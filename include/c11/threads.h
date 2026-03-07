@@ -29,6 +29,40 @@
 #ifndef EMULATED_THREADS_H_INCLUDED_
 #define EMULATED_THREADS_H_INCLUDED_
 
+/*
+ * If the system provides a native C11 <threads.h>, use it directly
+ * instead of our emulation. This avoids conflicts with modern glibc
+ * (>= 2.28) which defines once_flag, call_once, etc. natively.
+ *
+ * We still include the same headers that threads_posix.h used to pull
+ * in transitively, because many Mesa source files depend on them.
+ */
+#if !defined(__STDC_NO_THREADS__) && defined(__has_include)
+#if __has_include(<threads.h>)
+
+/* Preserve transitive includes that threads_posix.h provided */
+#include <stdlib.h>
+#include <errno.h>
+#include <unistd.h>
+#include <sched.h>
+#include <pthread.h>
+
+#include_next <threads.h>
+
+// FIXME: temporary non-standard hack to ease transition.
+// With native C11 threads, mtx_t is not pthread_mutex_t, so we
+// cannot use PTHREAD_MUTEX_INITIALIZER. Zero-init is equivalent
+// for a default (plain) mutex.
+#ifndef _MTX_INITIALIZER_NP
+#define _MTX_INITIALIZER_NP {0}
+#endif
+
+#define EMULATED_THREADS_USE_NATIVE 1
+#endif
+#endif
+
+#ifndef EMULATED_THREADS_USE_NATIVE
+
 #include <time.h>
 
 #ifndef TIME_UTC
@@ -68,6 +102,6 @@ enum {
 #error Not supported on this platform.
 #endif
 
-
+#endif /* EMULATED_THREADS_USE_NATIVE */
 
 #endif /* EMULATED_THREADS_H_INCLUDED_ */

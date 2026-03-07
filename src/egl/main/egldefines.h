@@ -46,8 +46,8 @@ extern "C" {
 #define _EGL_MAX_PBUFFER_WIDTH 4096
 #define _EGL_MAX_PBUFFER_HEIGHT 4096
 
-#ifdef AMBER
-#define _EGL_VENDOR_STRING "Mesa Project (Amber)"
+#ifdef COPAL
+#define _EGL_VENDOR_STRING "Mesa Project (Copal)"
 #else
 #define _EGL_VENDOR_STRING "Mesa Project"
 #endif

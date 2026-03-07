@@ -43,7 +43,7 @@ loader_c_args = [
 
 _prefer_iris = get_option('prefer-iris')
 if _prefer_iris == 'auto'
-  _prefer_iris = amber ? 'false' : 'true'
+  _prefer_iris = copal ? 'false' : 'true'
 endif
 if _prefer_iris == 'true'
   loader_c_args += ['-DPREFER_IRIS']
