@@ -1,6 +1,7 @@
 mesa-copal (1.0.0-1) unstable; urgency=low
 
   * Initial release.
-  * This is only here because Debian would like me to. Check GitHub for real changes.
+  * Debian forces me to include this.
+  * Check GitHub for real changes.
 
  -- Lynden Lewis (Smu1zel) <lyndenl25@yahoo.com>  Sat, 11 Apr 2026 01:00:00 -0400
