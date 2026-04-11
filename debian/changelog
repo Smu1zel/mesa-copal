@@ -1,0 +1,11 @@
+mesa-amber (21.3.9-1) unstable; urgency=medium
+
+  * Team upload.
+  * Initial upload. (Closes: #1006202)
+  * New upstream release.
+  * control: Fix libgl1-amber-dri description.
+  * rules: Drop i915. (LP: #2006744)
+  * amber.diff: Dropped, upstream.
+  * copyright: Updated.
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Thu, 09 Feb 2023 20:24:53 +0200
