@@ -1,11 +1,6 @@
-mesa-amber (21.3.9-1) unstable; urgency=medium
+mesa-copal (1.0.0-1) unstable; urgency=low
 
-  * Team upload.
-  * Initial upload. (Closes: #1006202)
-  * New upstream release.
-  * control: Fix libgl1-amber-dri description.
-  * rules: Drop i915. (LP: #2006744)
-  * amber.diff: Dropped, upstream.
-  * copyright: Updated.
+  * Initial release.
+  * This is only here because Debian would like me to. Check GitHub for real changes.
 
- -- Timo Aaltonen <tjaalton@debian.org>  Thu, 09 Feb 2023 20:24:53 +0200
+ -- Lynden Lewis (Smu1zel) <lyndenl25@yahoo.com>  Sat, 11 Apr 2026 01:00:00 -0400

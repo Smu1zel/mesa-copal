@@ -1,7 +1,7 @@
-Source: mesa-amber
+Source: mesa-copal
 Section: graphics
 Priority: optional
-Maintainer: Debian X Strike Force <debian-x@lists.debian.org>
+Maintainer: Lynden Lewis (Smu1zel) <lyndenl25@yahoo.com>
 Standards-Version: 4.6.0
 Build-Depends:
  bison,
@@ -41,32 +41,32 @@ Build-Depends:
  wayland-protocols (>= 1.9) [linux-any],
  x11proto-dev,
  zlib1g-dev
-Vcs-Git: https://salsa.debian.org/xorg-team/lib/mesa-amber.git
-Vcs-Browser: https://salsa.debian.org/xorg-team/lib/mesa-amber
+Vcs-Git: https://github.com/Smu1zel/mesa-copal.git
+Vcs-Browser: https://github.com/Smu1zel/mesa-copal
 Homepage: https://mesa3d.org/
 
-Package: libegl-amber0
+Package: libegl-copal0
 Section: libs
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Provides: libegl-vendor
 Pre-Depends: ${misc:Pre-Depends}
 Multi-Arch: same
-Description: free implementation of the EGL API -- Amber vendor library
+Description: free implementation of the EGL API -- Copal vendor library
  This package contains the EGL native platform graphics interface library.
  EGL provides a platform-agnostic mechanism for creating rendering surfaces
  for use with other graphics libraries, such as OpenGL|ES.
  .
- This package contains the Mesa Amber vendor library for EGL.
+ This package contains the Mesa Copal vendor library for EGL.
 
-Package: libglx-amber0
+Package: libglx-copal0
 Section: libs
 Architecture: any
-Depends: libgl1-amber-dri, ${misc:Depends}, ${shlibs:Depends}
+Depends: libgl1-copal-dri, ${misc:Depends}, ${shlibs:Depends}
 Provides: libglx-vendor
 Pre-Depends: ${misc:Pre-Depends}
 Multi-Arch: same
-Description: free implementation of the OpenGL API -- Amber GLX vendor library
+Description: free implementation of the OpenGL API -- Copal GLX vendor library
  Mesa is a 3-D graphics library with an API which is very similar to
  that of OpenGL.  To the extent that Mesa utilizes the OpenGL command
  syntax or state machine, it is being used with authorization from
@@ -76,12 +76,12 @@ Description: free implementation of the OpenGL API -- Amber GLX vendor library
  .
  This version of Mesa provides GLX and DRI capabilities: it is capable of
  both direct and indirect rendering.  For direct rendering, it can use DRI
- modules from the libgl1-amber-dri package to accelerate drawing.
+ modules from the libgl1-copal-dri package to accelerate drawing.
  .
  This package does not include the modules themselves: these can be found
- in the libgl1-amber-dri package.
+ in the libgl1-copal-dri package.
 
-Package: libgl1-amber-dri
+Package: libgl1-copal-dri
 Section: libs
 Architecture: any
 Pre-Depends: ${misc:Pre-Depends}
@@ -90,7 +90,7 @@ Conflicts: libgl1-mesa-dri (<< 22.0.0~)
 Replaces: libgl1-mesa-dri (<< 22.0.0~)
 Provides: dri-drivers
 Multi-Arch: same
-Description: free implementation of the OpenGL API -- Amber DRI modules
+Description: free implementation of the OpenGL API -- Copal DRI modules
  This version of Mesa provides GLX and DRI capabilities: it is capable of
  both direct and indirect rendering.  For direct rendering, it can use DRI
  modules from the libgl1-mesa-dri package to accelerate drawing.
@@ -98,5 +98,5 @@ Description: free implementation of the OpenGL API -- Amber DRI modules
  This package does not include the OpenGL library itself, only the DRI
  modules for accelerating direct rendering.
  .
- For a complete description of Mesa Amber, please look at the
- libglx-amber0 package.
+ For a complete description of Mesa Copal, please look at the
+ libglx-copal0 package.

@@ -76,7 +76,7 @@ DRI_DRIVERS_LIST := $(subst $(space),$(comma),$(DRI_DRIVERS))
 confflags_EGL = -Dplatforms="$(EGL_PLATFORMS)"
 
 confflags += \
-	-Damber=true \
+	-Dcopal=true \
 	-Ddri-drivers="[$(DRI_DRIVERS_LIST)]" \
 	-Ddri-drivers-path=/usr/lib/$(DEB_HOST_MULTIARCH)/dri \
 	-Ddri-search-path='/usr/lib/$(DEB_HOST_MULTIARCH)/dri:\$$$${ORIGIN}/dri:/usr/lib/dri' \
@@ -95,7 +95,7 @@ confflags += \
 	-Dgles2=enabled \
 	-Dosmesa=true \
 	# The amber branch is too unmaintained to work with modern LLVM. Arch Linux does the same thing.
-	# TODO: Maybe fork amber myself and fix this?
+	# TODO: Maybe fix this?
 	-Dllvm=disabled \
 	$(confflags_DIRECT_RENDERING) \
 	$(confflags_EGL) \
@@ -135,18 +135,18 @@ override_dh_install:
 	# Get rid of some files which aren't installed. Do not
 	# use -f to ensure we notice disappearing files:
 	rm debian/tmp/usr/lib/*/libglapi.so*
-	rm debian/tmp/usr/lib/*/libEGL_amber.so
-	rm debian/tmp/usr/lib/*/libGLX_amber.so
+	rm debian/tmp/usr/lib/*/libEGL_copal.so
+	rm debian/tmp/usr/lib/*/libGLX_copal.so
 	rm -r debian/tmp/usr/include/EGL
 	rm -r debian/tmp/usr/include/GL/
 	rm debian/tmp/usr/lib/*/pkgconfig/dri.pc
 
 	# Copy the hardlinked *_dri.so correctly.
-	install -m755 -d debian/libgl1-amber-dri/usr/lib/${DEB_HOST_MULTIARCH}/dri/
+	install -m755 -d debian/libgl1-copal-dri/usr/lib/${DEB_HOST_MULTIARCH}/dri/
 	mv debian/tmp/usr/lib/${DEB_HOST_MULTIARCH}/dri/*_dri.so \
-	   debian/libgl1-amber-dri/usr/lib/${DEB_HOST_MULTIARCH}/dri/
+	   debian/libgl1-copal-dri/usr/lib/${DEB_HOST_MULTIARCH}/dri/
 	mv debian/tmp/usr/share/drirc.d/00-mesa-defaults.conf \
-		debian/tmp/usr/share/drirc.d/00-amber-defaults.conf
+		debian/tmp/usr/share/drirc.d/00-copal-defaults.conf
 
 	dh_install -a
 
