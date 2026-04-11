@@ -1,4 +1,4 @@
-mesa-copal (1.0.0-1) unstable; urgency=low
+mesa-copal (21.3.9-1) unstable; urgency=low
 
   * Initial release.
   * Debian forces me to include this.
