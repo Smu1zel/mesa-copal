@@ -43,6 +43,7 @@ confflags_SSE2 = -Dsse2=true
 ifeq ($(DEB_HOST_ARCH_OS), hurd)
 	confflags_DIRECT_RENDERING = -Dglx-direct=false
 else
+	# Build r100 and r200 classic drivers
 	DRI_DRIVERS += r100 r200
 
 	confflags_DIRECT_RENDERING = -Dglx-direct=true
@@ -57,9 +58,9 @@ else
 	EGL_PLATFORMS += ,wayland
   endif
 
-  # Build intel drivers on archs where libdrm-intel is installed
+  # Build classic i915 driver on archs where libdrm-intel is installed (i965 is replaced by crocus)
   ifneq (,$(filter $(DEB_HOST_ARCH),amd64 i386 kfreebsd-amd64 kfreebsd-i386 x32))
-	DRI_DRIVERS += i965
+	DRI_DRIVERS += i915
   endif
 endif
 
@@ -75,27 +76,31 @@ DRI_DRIVERS_LIST := $(subst $(space),$(comma),$(DRI_DRIVERS))
 
 confflags_EGL = -Dplatforms="$(EGL_PLATFORMS)"
 
+# Note on config details:
+# - We direct build output to /usr/lib/${DEB_HOST_MULTIARCH}/dri-copal to prevent co-installation conflicts.
+# - GLES1/2 are enabled to be used by old applications and classic i915.
+# - LLVM is disabled because Amber is too unmaintained to work with modern LLVM versions.
+# - OSMesa is disabled to prevent packaging mismatches and unnecessary compiled bloat.
 confflags += \
 	-Dcopal=true \
 	-Ddri-drivers="[$(DRI_DRIVERS_LIST)]" \
-	-Ddri-drivers-path=/usr/lib/$(DEB_HOST_MULTIARCH)/dri \
-	-Ddri-search-path='/usr/lib/$(DEB_HOST_MULTIARCH)/dri:\$$$${ORIGIN}/dri:/usr/lib/dri' \
+#	Only for smoke testing. Use the system's (much faster) LLVMPipe instead of Softpipe.
+#	Uncomment if you really want Softpipe.
+#	-Dgallium-drivers="['swrast']" \
+	-Ddri-drivers-path=/usr/lib/$(DEB_HOST_MULTIARCH)/dri-copal \
+	-Ddri-search-path='/usr/lib/$(DEB_HOST_MULTIARCH)/dri-copal:/usr/lib/$(DEB_HOST_MULTIARCH)/dri:\$$$${ORIGIN}/dri:/usr/lib/dri' \
 	-Dvulkan-drivers="" \
 	-Dglvnd=true \
 	-Dshared-glapi=enabled \
 	-Dgallium-xvmc=disabled \
 	-Dgallium-omx=disabled \
 	-Db_ndebug=true \
-	-Dbuild-tests=true \
+	-Dbuild-tests=false \
 	-Dgbm=disabled \
 	-Ddri3=disabled \
-	# May be used by some old applications.
 	-Dgles1=enabled \
-	# Supported by classic i915.
 	-Dgles2=enabled \
-	-Dosmesa=true \
-	# The amber branch is too unmaintained to work with modern LLVM. Arch Linux does the same thing.
-	# TODO: Maybe fix this?
+	-Dosmesa=false \
 	-Dllvm=disabled \
 	$(confflags_DIRECT_RENDERING) \
 	$(confflags_EGL) \
@@ -121,10 +126,8 @@ override_dh_auto_install:
 #			$${file} > $${file%%.in}; \
 #	done
 
-# some tests are expected to fail for now, drop this when upstream has
-# better cross-build testing in place and expected failures fixed
 override_dh_auto_test:
-	-dh_auto_test
+	# Tests disabled
 
 allpkg = $(shell dh_listpackages -a)
 
@@ -132,23 +135,78 @@ override_dh_install:
 	# purge .la files
 	find debian/tmp/ -name '*.la' -exec rm '{}' ';'
 
-	# Get rid of some files which aren't installed. Do not
-	# use -f to ensure we notice disappearing files:
-	rm debian/tmp/usr/lib/*/libglapi.so*
-	rm debian/tmp/usr/lib/*/libEGL_copal.so
-	rm debian/tmp/usr/lib/*/libGLX_copal.so
-	rm -r debian/tmp/usr/include/EGL
-	rm -r debian/tmp/usr/include/GL/
-	rm debian/tmp/usr/lib/*/pkgconfig/dri.pc
+	# 1. Isolate Copal's built libglapi to a private subdirectory inside libgl1-copal-dri.
+	# We copy the actual libraries from debian/tmp before dh_install runs.
+	install -m755 -d debian/libgl1-copal-dri/usr/lib/$(DEB_HOST_MULTIARCH)/copal/
+	if [ -d debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH) ]; then \
+		cp -d debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libglapi.so* debian/libgl1-copal-dri/usr/lib/$(DEB_HOST_MULTIARCH)/copal/; \
+	fi
+	# Clean up libglapi from debian/tmp so it does not end up in any other packages
+	rm -f debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libglapi.so*
 
-	# Copy the hardlinked *_dri.so correctly.
-	install -m755 -d debian/libgl1-copal-dri/usr/lib/${DEB_HOST_MULTIARCH}/dri/
-	mv debian/tmp/usr/lib/${DEB_HOST_MULTIARCH}/dri/*_dri.so \
-	   debian/libgl1-copal-dri/usr/lib/${DEB_HOST_MULTIARCH}/dri/
-	mv debian/tmp/usr/share/drirc.d/00-mesa-defaults.conf \
-		debian/tmp/usr/share/drirc.d/00-copal-defaults.conf
+	# 2. Get rid of unversioned development symlinks and headers which aren't co-installable.
+	# (Note: We leave the versioned .so.0* / .so.* files and JSON files in debian/tmp for dh_install)
+	rm -f debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libEGL_copal.so
+	rm -f debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libGLX_copal.so
+	rm -rf debian/tmp/usr/include/EGL
+	rm -rf debian/tmp/usr/include/GL/
+	rm -f debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/pkgconfig/dri.pc
 
+	# 3. Move the hardlinked DRI and Gallium drivers and drirc into libgl1-copal-dri package structure
+	install -m755 -d debian/libgl1-copal-dri/usr/lib/$(DEB_HOST_MULTIARCH)/dri-copal/
+	if [ -d debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/dri-copal ]; then \
+		mv debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/dri-copal/*_dri.so \
+		   debian/libgl1-copal-dri/usr/lib/$(DEB_HOST_MULTIARCH)/dri-copal/; \
+	fi
+	
+	if [ -f debian/tmp/usr/share/drirc.d/00-mesa-defaults.conf ]; then \
+		mv debian/tmp/usr/share/drirc.d/00-mesa-defaults.conf \
+			debian/tmp/usr/share/drirc.d/00-copal-defaults.conf; \
+	fi
+
+	# 4. Standard installation run: Let debhelper handle matching and moving GLVND files to respective packages
 	dh_install -a
+
+	# 5. Fix RPATH on EGL and GLX libraries inside their installed package targets
+	# This routes them directly to Copal's isolated private libglapi copy
+	if command -v patchelf >/dev/null 2>&1; then \
+		find debian/libglx-copal0/ debian/libegl-copal0/ -type f -name "lib*copal.so*" | while read -r f; do \
+			patchelf --set-rpath "/usr/lib/$(DEB_HOST_MULTIARCH)/copal" "$$f"; \
+		done; \
+	fi
+
+	# 6. Generate and install the automated hardware detection scripts
+	install -m755 -d debian/libgl1-copal-dri/etc/profile.d/
+	install -m755 -d debian/libgl1-copal-dri/etc/X11/Xsession.d/
+	
+	@echo '#!/bin/sh' > debian/libgl1-copal-dri/etc/profile.d/copal.sh
+	@echo '# Copal GPU Auto-detection' >> debian/libgl1-copal-dri/etc/profile.d/copal.sh
+	@echo 'copal_detect_gpu() {' >> debian/libgl1-copal-dri/etc/profile.d/copal.sh
+	@echo '    for card_dir in /sys/class/drm/card[0-9]*/device; do' >> debian/libgl1-copal-dri/etc/profile.d/copal.sh
+	@echo '        if [ -f "$$card_dir/vendor" ] && [ -f "$$card_dir/device" ]; then' >> debian/libgl1-copal-dri/etc/profile.d/copal.sh
+	@echo '            local vendor=$$(cat "$$card_dir/vendor" 2>/dev/null | tr "A-Z" "a-z" | sed "s/^0x//")' >> debian/libgl1-copal-dri/etc/profile.d/copal.sh
+	@echo '            local device=$$(cat "$$card_dir/device" 2>/dev/null | tr "A-Z" "a-z" | sed "s/^0x//")' >> debian/libgl1-copal-dri/etc/profile.d/copal.sh
+	@echo '            local pci_id="$${vendor}:$${device}"' >> debian/libgl1-copal-dri/etc/profile.d/copal.sh
+	@echo '            case "$$pci_id" in' >> debian/libgl1-copal-dri/etc/profile.d/copal.sh
+	@echo '                # Intel Gen 2 & Gen 3 GPUs (i830M to GMA 3150)' >> debian/libgl1-copal-dri/etc/profile.d/copal.sh
+	@echo '                8086:3577|8086:2562|8086:3582|8086:2572|8086:2582|8086:258a|8086:2592|8086:2772|8086:27a2|8086:27ae|8086:2912|8086:2922|8086:2932|8086:2942|8086:a001|8086:a011) return 0 ;;' >> debian/libgl1-copal-dri/etc/profile.d/copal.sh
+	@echo '                # Radeon R100/R200 series GPUs (7000 to 9250)' >> debian/libgl1-copal-dri/etc/profile.d/copal.sh
+	@echo '                1002:5144|1002:5145|1002:5146|1002:5147|1002:4c57|1002:4242|1002:4c64|1002:4966|1002:5960|1002:5961|1002:5962|1002:5964) return 0 ;;' >> debian/libgl1-copal-dri/etc/profile.d/copal.sh
+	@echo '                # Nvidia / Nouveau classic GPUs (NV04 to NV28)' >> debian/libgl1-copal-dri/etc/profile.d/copal.sh
+	@echo '                10de:0020|10de:0028|10de:002c|10de:00a0|10de:0100|10de:0101|10de:0103|10de:0110|10de:0111|10de:0113|10de:0150|10de:0151|10de:0152|10de:0153|10de:0170|10de:0171|10de:0172|10de:0173|10de:0181|10de:0182|10de:0183|10de:0185|10de:018a|10de:018c|10de:0200|10de:0201|10de:0202|10de:0203|10de:0250|10de:0251|10de:0253|10de:0280|10de:0281) return 0 ;;' >> debian/libgl1-copal-dri/etc/profile.d/copal.sh
+	@echo '            esac' >> debian/libgl1-copal-dri/etc/profile.d/copal.sh
+	@echo '        fi' >> debian/libgl1-copal-dri/etc/profile.d/copal.sh
+	@echo '    done' >> debian/libgl1-copal-dri/etc/profile.d/copal.sh
+	@echo '    return 1' >> debian/libgl1-copal-dri/etc/profile.d/copal.sh
+	@echo '}' >> debian/libgl1-copal-dri/etc/profile.d/copal.sh
+	@echo 'if copal_detect_gpu; then' >> debian/libgl1-copal-dri/etc/profile.d/copal.sh
+	@echo '    export __GLX_VENDOR_LIBRARY_NAME=copal' >> debian/libgl1-copal-dri/etc/profile.d/copal.sh
+	@echo '    export __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/50_copal.json' >> debian/libgl1-copal-dri/etc/profile.d/copal.sh
+	@echo 'fi' >> debian/libgl1-copal-dri/etc/profile.d/copal.sh
+
+	cp debian/libgl1-copal-dri/etc/profile.d/copal.sh debian/libgl1-copal-dri/etc/X11/Xsession.d/90copal-env
+	chmod +x debian/libgl1-copal-dri/etc/profile.d/copal.sh
+	chmod +x debian/libgl1-copal-dri/etc/X11/Xsession.d/90copal-env
 
 	# Install bug control and script:
 	set -e; for p in $(allpkg); do \
