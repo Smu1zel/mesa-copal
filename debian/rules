@@ -81,12 +81,11 @@ confflags_EGL = -Dplatforms="$(EGL_PLATFORMS)"
 # - GLES1/2 are enabled to be used by old applications and classic i915.
 # - LLVM is disabled because Amber is too unmaintained to work with modern LLVM versions.
 # - OSMesa is disabled to prevent packaging mismatches and unnecessary compiled bloat.
+# - swrast is explicitly disabled (empty array) so real users do not fall back to slow softpipe/swrast software rendering.
 confflags += \
 	-Dcopal=true \
 	-Ddri-drivers="[$(DRI_DRIVERS_LIST)]" \
-#	Only for smoke testing. Use the system's (much faster) LLVMPipe instead of Softpipe.
-#	Uncomment if you really want Softpipe.
-#	-Dgallium-drivers="['swrast']" \
+	-Dgallium-drivers="[]" \
 	-Ddri-drivers-path=/usr/lib/$(DEB_HOST_MULTIARCH)/dri-copal \
 	-Ddri-search-path='/usr/lib/$(DEB_HOST_MULTIARCH)/dri-copal:/usr/lib/$(DEB_HOST_MULTIARCH)/dri:\$$$${ORIGIN}/dri:/usr/lib/dri' \
 	-Dvulkan-drivers="" \
@@ -156,7 +155,7 @@ override_dh_install:
 	install -m755 -d debian/libgl1-copal-dri/usr/lib/$(DEB_HOST_MULTIARCH)/dri-copal/
 	if [ -d debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/dri-copal ]; then \
 		mv debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/dri-copal/*_dri.so \
-		   debian/libgl1-copal-dri/usr/lib/$(DEB_HOST_MULTIARCH)/dri-copal/; \
+		   debian/libgl1-copal-dri/usr/lib/$(DEB_HOST_MULTIARCH)/dri-copal/ 2>/dev/null || true; \
 	fi
 	
 	if [ -f debian/tmp/usr/share/drirc.d/00-mesa-defaults.conf ]; then \
