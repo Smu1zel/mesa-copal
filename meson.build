@@ -54,7 +54,7 @@ pre_args = [
   '-D__STDC_FORMAT_MACROS',
   '-D__STDC_LIMIT_MACROS',
   '-DPACKAGE_VERSION="@0@@1@"'.format(meson.project_version(), package_version_suffix),
-  '-DPACKAGE_BUGREPORT="https://gitlab.freedesktop.org/mesa/mesa/-/issues"',
+  '-DPACKAGE_BUGREPORT="https://github.com/Smu1zel/mesa-copal/issues"',
 ]
 c_args = []
 cpp_args = []
