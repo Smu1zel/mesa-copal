@@ -37,7 +37,6 @@ Build-Depends:
  python3-mako,
  python3-setuptools,
  quilt (>= 0.63-8.2~),
- valgrind-if-available,
  wayland-protocols (>= 1.9) [linux-any],
  x11proto-dev,
  zlib1g-dev
